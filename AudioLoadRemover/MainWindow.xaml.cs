@@ -1,5 +1,9 @@
-﻿using Microsoft.Win32;
+﻿using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
+using System.Windows.Forms;
 
 namespace AudioLoadRemover
 {
@@ -15,11 +19,13 @@ namespace AudioLoadRemover
 
         private void OpenVideo_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new OpenFileDialog();
-            dialog.Filter = "Video files|*.mp4;*.mkv;*.avi";
+            var dialog = new OpenFileDialog
+            {
+                Filter = "Video files|*.mp4;*.mkv;*.avi"
+            };
 
             var result = dialog.ShowDialog();
-            if (result ?? false)
+            if (result == System.Windows.Forms.DialogResult.OK)
             {
                 var videoPath = dialog.FileName;
 
@@ -28,12 +34,20 @@ namespace AudioLoadRemover
                 this.VideoElement.Source = new Uri(videoPath);
                 this.VideoElement.Visibility = Visibility.Visible;
 
-                this.ProcessVideo(videoPath);
+                new Thread(() => ProcessVideo(videoPath)).Start();
             }
         }
 
-        private void ProcessVideo(string videoPath)
+        private static void ProcessVideo(string videoPath)
         {
+            var sampleRate = 6000;
+
+            var audioClips = new List<AudioClip>
+            {
+                new AudioClip("SW_RivenLink", @"Riven\SW_RivenLink.wav", sampleRate)
+            };
+
+            AudioClipDetector.Detect(audioClips, videoPath, sampleRate);
         }
     }
 }
