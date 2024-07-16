@@ -7,7 +7,7 @@ namespace AudioLoadRemover
 {
     internal class AudioClipDetector
     {
-        private const int NumSecondsPerChunk = 10;
+        private const int NumSecondsPerChunk = 5 * 60;
 
         public static void Detect(AudioClip clip, string videoPath, int sampleRate)
         {
@@ -34,17 +34,13 @@ namespace AudioLoadRemover
 
             var audioBuffer = new AudioCorrelationBuffer(initialSampleBuffer);
             var sampleBuffer = new float[numSamplesPerChunk];
-            var crossCorrelations = new float[numSamplesPerChunk];
             var maxCorrelationTracker = new MaxValueTracker(clip.Samples.Length);
             while (true)
             {
-                Trace.Write(".");
-
-                audioBuffer.CrossCorrelation(clip.Samples, crossCorrelations);
-
-                for (var i = 0; i < crossCorrelations.Length; ++i)
+                var crossCorrs = audioBuffer.CrossCorrelation(clip.Samples, numSamplesPerChunk);
+                for (var i = 0; i < crossCorrs.Count; ++i)
                 {
-                    maxCorrelationTracker.Add(crossCorrelations[i]);
+                    maxCorrelationTracker.Add(crossCorrs[i]);
                 }
 
                 var numSamples = audioSampleProvider.Read(sampleBuffer, 0, sampleBuffer.Length);

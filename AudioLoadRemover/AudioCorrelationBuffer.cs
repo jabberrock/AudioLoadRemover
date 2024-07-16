@@ -37,27 +37,48 @@ namespace AudioLoadRemover
         /// <summary>
         /// Calculates the cross correlation between otherSamples, and the samples within this buffer.
         /// </summary>
-        public void CrossCorrelation(ReadOnlySpan<float> otherSamples, float[] correlations)
+        public List<float> CrossCorrelation(float[] otherSamples, int numCrossCorrs)
         {
-            if (otherSamples.Length + correlations.Length > this.samples.Length)
+            if (otherSamples.Length + numCrossCorrs > this.samples.Length)
             {
                 throw new Exception("otherSamples and correlations does not fit in buffer");
             }
 
             var samples = this.samples;
-            for (var i = 0; i < correlations.Length; ++i)
-            {
-                var correlation = 0.0f;
-                for (var j = 0; j < otherSamples.Length; j += Vector<float>.Count)
-                {
-                    var v1 = new Vector<float>(otherSamples[j]);
-                    var v2 = new Vector<float>(samples[i + j]);
-                    correlation += Vector.Sum(v1 * v2);
-                }
+            var crossCorrsChunks =
+                Enumerable.Range(0, numCrossCorrs / NumCrossCorrsPerThread)
+                    .AsParallel()
+                    .Select(chunkIndex =>
+                        {
+                            var crossCorrs = new List<float>();
 
-                correlations[i] = correlation;
+                            for (var i = chunkIndex * NumCrossCorrsPerThread; i < (chunkIndex + 1) * NumCrossCorrsPerThread && i < numCrossCorrs; ++i)
+                            {
+                                var correlation = 0.0f;
+                                for (var j = 0; j < otherSamples.Length; j += Vector<float>.Count)
+                                {
+                                    var v1 = new Vector<float>(otherSamples[j]);
+                                    var v2 = new Vector<float>(samples[i + j]);
+                                    correlation += Vector.Sum(v1 * v2);
+                                }
+
+                                crossCorrs.Add(correlation);
+                            }
+
+                            return crossCorrs;
+                        })
+                    .ToArray();
+
+            var crossCorrs = new List<float>();
+            foreach (var chunk in crossCorrsChunks)
+            {
+                crossCorrs.AddRange(chunk);
             }
+
+            return crossCorrs;
         }
+
+        private const int NumCrossCorrsPerThread = 1000;
 
         private readonly float[] samples;
     }

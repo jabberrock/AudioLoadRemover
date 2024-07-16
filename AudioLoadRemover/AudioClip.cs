@@ -9,9 +9,9 @@ namespace AudioLoadRemover
     {
         public AudioClip(string filePath, int sampleRate)
         {
-            Trace.WriteLine($"Loading audio clip {name} from {filePath}");
-
             this.name = Path.GetFileNameWithoutExtension(filePath);
+
+            Trace.WriteLine($"Loading audio clip {this.name} from {filePath}");
 
             var samples = new List<float>();
             using (var audioStream = new MemoryStream())
@@ -46,7 +46,7 @@ namespace AudioLoadRemover
             get { return this.name; }
         }
 
-        public ReadOnlySpan<float> Samples
+        public float[] Samples
         {
             get { return this.samples; }
         }
