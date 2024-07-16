@@ -1,61 +1,65 @@
-﻿using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
-using System.Diagnostics;
-using System.IO;
+﻿using System.Diagnostics;
+using System.Numerics;
 
 namespace AudioLoadRemover
 {
     internal class AudioClipDetector
     {
-        private const int NumSecondsPerChunk = 5 * 60;
+        private const int NumFramesPerTask = 1000;
 
-        public static void Detect(AudioClip clip, string videoPath, int sampleRate)
+        public static void Detect(AudioClip query, AudioClip source, int sampleRate, int numChannels)
         {
-            Trace.WriteLine($"Searching for audio clip {clip.Name} within {videoPath}");
+            Trace.WriteLine($"Searching for audio clip {query.Name} within {source.Name}");
 
-            using var audioStream = new MemoryStream();
-            using var audioMediaReader = new MediaFoundationReader(videoPath);
-            using var audioMediaResampler = new MediaFoundationResampler(audioMediaReader, sampleRate);
-             
-            var audioSampleProvider = audioMediaResampler.ToSampleProvider();
-            if (audioMediaReader.WaveFormat.Channels > 1)
+            var querySamples = query.Samples;
+            var sourceSamples = source.Samples;
+
+            var numFramesToCrossCorr = (sourceSamples.Length - querySamples.Length) / numChannels;
+            var numChunks = (numFramesToCrossCorr + (NumFramesPerTask - 1)) / NumFramesPerTask;
+
+            var crossCorrChunks =
+                Enumerable.Range(0, numChunks)
+                    .AsParallel()
+                    .Select(chunkIndex =>
+                        {
+                            var frameIndex = chunkIndex * NumFramesPerTask;
+                            var frameEndIndex = Math.Min(frameIndex + NumFramesPerTask, numFramesToCrossCorr);
+                            
+                            var crossCorrs = new float[frameEndIndex - frameIndex];
+
+                            for (var i = frameIndex; i < frameEndIndex; ++i)
+                            {
+                                float corr = 0.0f;
+
+                                for (var j = 0;
+                                     j < querySamples.Length - Vector<float>.Count; // Don't go off the end of querySamples
+                                     j += Vector<float>.Count)
+                                {
+                                    var v1 = new Vector<float>(querySamples, j);
+                                    var v2 = new Vector<float>(sourceSamples, i * numChannels + j);
+                                    corr += Vector.Sum(v1 * v2);
+                                }
+
+                                crossCorrs[i - frameIndex] = corr;
+                            }
+
+                            return crossCorrs;
+                        })
+                    .ToArray();
+
+            var maxCorrTracker = new MaxValueTracker(querySamples.Length);
+            foreach (var chunk in crossCorrChunks)
             {
-                audioSampleProvider = new StereoToMonoSampleProvider(audioSampleProvider);
-            }
-
-            var numSamplesPerChunk = sampleRate * NumSecondsPerChunk;
-
-            var initialSampleBuffer = new float[clip.Samples.Length + numSamplesPerChunk];
-            var numInitialSamples = audioSampleProvider.Read(initialSampleBuffer, 0, initialSampleBuffer.Length);
-            if (numInitialSamples < initialSampleBuffer.Length)
-            {
-                throw new Exception("Video is too short");
-            }
-
-            var audioBuffer = new AudioCorrelationBuffer(initialSampleBuffer);
-            var sampleBuffer = new float[numSamplesPerChunk];
-            var maxCorrelationTracker = new MaxValueTracker(clip.Samples.Length);
-            while (true)
-            {
-                var crossCorrs = audioBuffer.CrossCorrelation(clip.Samples, numSamplesPerChunk);
-                for (var i = 0; i < crossCorrs.Count; ++i)
+                foreach (var corr in chunk)
                 {
-                    maxCorrelationTracker.Add(crossCorrs[i]);
+                    maxCorrTracker.Add(corr);
                 }
-
-                var numSamples = audioSampleProvider.Read(sampleBuffer, 0, sampleBuffer.Length);
-                if (numSamples < sampleBuffer.Length)
-                {
-                    break;
-                }
-
-                audioBuffer.Add(sampleBuffer);
             }
 
-            Trace.WriteLine(clip.Name);
+            Trace.WriteLine(query.Name);
 
-            maxCorrelationTracker.SuppressNoise();
-            foreach (var maxEntry in maxCorrelationTracker.MaxEntries)
+            maxCorrTracker.SuppressNoise();
+            foreach (var maxEntry in maxCorrTracker.MaxEntries)
             {
                 var totalSeconds = (float)maxEntry.Index / sampleRate;
                 var minutes = (int)(totalSeconds / 60.0f);

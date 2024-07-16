@@ -21,7 +21,7 @@ namespace AudioLoadRemover
         {
             var dialog = new OpenFileDialog
             {
-                Filter = "Video files|*.mp4;*.mkv;*.avi"
+                Filter = "Audio and Video files|*.wav;*.mp3;*.mp4;*.mkv;*.avi"
             };
 
             var result = dialog.ShowDialog();
@@ -42,10 +42,12 @@ namespace AudioLoadRemover
         {
             var sampleRate = 6000;
 
+            var video = new AudioClip(videoPath, sampleRate);
+
             foreach (var audioPath in Directory.GetFiles("Riven", "*.wav"))
             {
                 var audioClip = new AudioClip(audioPath, sampleRate);
-                AudioClipDetector.Detect(audioClip, videoPath, sampleRate);
+                AudioClipDetector.Detect(audioClip, video, sampleRate, 2);
             }
         }
     }
