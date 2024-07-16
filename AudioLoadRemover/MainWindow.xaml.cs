@@ -1,7 +1,4 @@
-﻿using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
-using System.Diagnostics;
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Forms;
 
