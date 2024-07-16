@@ -40,14 +40,15 @@ namespace AudioLoadRemover
 
         private static void ProcessVideo(string videoPath)
         {
-            var sampleRate = 6000;
+            var sampleRate = 3000;
 
-            var audioClips = new List<AudioClip>
+            var audioClips = new List<AudioClip>();
+            foreach (var audioPath in Directory.GetFiles("Riven", "*.wav"))
             {
-                new AudioClip("SW_RivenLink", @"Riven\SW_RivenLink.wav", sampleRate)
-            };
+                audioClips.Add(new AudioClip(audioPath, sampleRate));
+            }
 
-            AudioClipDetector.Detect(audioClips, videoPath, sampleRate);
+            Parallel.ForEach(audioClips, audioClip => AudioClipDetector.Detect(audioClip, videoPath, sampleRate));
         }
     }
 }

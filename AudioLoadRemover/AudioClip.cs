@@ -7,11 +7,11 @@ namespace AudioLoadRemover
 {
     internal class AudioClip
     {
-        public AudioClip(string name, string filePath, int sampleRate)
+        public AudioClip(string filePath, int sampleRate)
         {
             Trace.WriteLine($"Loading audio clip {name} from {filePath}");
 
-            this.name = name;
+            this.name = Path.GetFileNameWithoutExtension(filePath);
 
             var samples = new List<float>();
             using (var audioStream = new MemoryStream())
