@@ -40,7 +40,7 @@ namespace AudioLoadRemover
 
         private static void ProcessVideo(string videoPath)
         {
-            var sampleRate = 6000;
+            var sampleRate = 3000;
 
             var video = new AudioClip(videoPath, sampleRate);
 
