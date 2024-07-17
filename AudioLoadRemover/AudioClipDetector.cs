@@ -8,8 +8,8 @@ namespace AudioLoadRemover
         private const int NumFramesPerTask = 1000;
 
         public record Match(
-            AudioClip Query,
-            AudioClip Source, 
+            string QueryName,
+            string SourceName,
             TimeSpan StartTime, 
             TimeSpan EndTime, 
             int SampleRate,
@@ -64,24 +64,17 @@ namespace AudioLoadRemover
                 }
             }
 
-            Trace.WriteLine(query.Name);
-
             var matches = new List<Match>();
 
             maxCorrTracker.SuppressNoise();
             foreach (var maxEntry in maxCorrTracker.MaxEntries)
             {
-                var totalSeconds = (float)maxEntry.Index / sampleRate;
-                var minutes = (int)(totalSeconds / 60.0f);
-                var seconds = totalSeconds - minutes * 60.0f;
-                Trace.WriteLine($"{minutes}:{seconds} {maxEntry.Value}");
-
                 matches.Add(
                     new Match(
-                        query,
-                        source,
-                        TimeSpan.FromSeconds(maxEntry.Index / sampleRate), 
-                        TimeSpan.FromSeconds((maxEntry.Index + query.Duration) / sampleRate), 
+                        query.Name,
+                        source.Name,
+                        TimeSpan.FromSeconds((float)maxEntry.Index / sampleRate), 
+                        TimeSpan.FromSeconds((float)(maxEntry.Index + query.Duration) / sampleRate), 
                         sampleRate,
                         maxEntry.Value));
             }
