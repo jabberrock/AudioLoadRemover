@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Forms;
 
@@ -39,12 +40,31 @@ namespace AudioLoadRemover
         {
             var sampleRate = 3000;
 
-            var video = new AudioClip(videoPath, sampleRate);
+            var matches = new List<AudioClipDetector.Match>();
 
+            var video = new AudioClip(videoPath, sampleRate);
             foreach (var audioPath in Directory.GetFiles("Riven", "*.wav"))
             {
                 var audioClip = new AudioClip(audioPath, sampleRate);
-                AudioClipDetector.Detect(audioClip, video, sampleRate, 2);
+                var clipMatches = AudioClipDetector.Detect(audioClip, video, sampleRate, 2);
+                matches.AddRange(clipMatches);
+            }
+
+            var config = new List<LoadDetector.Sequence>()
+            {
+                //new LoadDetector.Sequence("SW_RivenLink", "SILENCE", TimeSpan.Zero, TimeSpan.Zero),
+                new LoadDetector.Sequence("SW_FMD_Inside_Close", "SW_FMD_InnerShell_Open", TimeSpan.Zero, TimeSpan.Zero),
+                new LoadDetector.Sequence("SW_FMD_InnerShell_Close", "SW_FMD_Inside_Open", TimeSpan.Zero, TimeSpan.Zero),
+                //new LoadDetector.Sequence("SW_Maglev", "SILENCE", TimeSpan.Zero, TimeSpan.Zero),
+                //new LoadDetector.Sequence("SW_Woodcart", "SILENCE", TimeSpan.Zero, TimeSpan.Zero),
+            };
+
+            var loadSegments = LoadDetector.Detect(matches, config);
+
+            Trace.WriteLine("Detected loads:");
+            foreach (var loadSegment in loadSegments)
+            {
+                Trace.WriteLine($"{loadSegment.Start} - {loadSegment.End}");
             }
         }
     }

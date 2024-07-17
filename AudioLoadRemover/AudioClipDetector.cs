@@ -7,14 +7,22 @@ namespace AudioLoadRemover
     {
         private const int NumFramesPerTask = 1000;
 
-        public static void Detect(AudioClip query, AudioClip source, int sampleRate, int numChannels)
+        public record Match(
+            AudioClip Query,
+            AudioClip Source, 
+            TimeSpan StartTime, 
+            TimeSpan EndTime, 
+            int SampleRate,
+            float Correlation);
+
+        public static List<Match> Detect(AudioClip query, AudioClip source, int sampleRate, int numChannels)
         {
             Trace.WriteLine($"Searching for audio clip {query.Name} within {source.Name}");
 
             var querySamples = query.Samples;
             var sourceSamples = source.Samples;
 
-            var numFramesToCrossCorr = (sourceSamples.Length - querySamples.Length) / numChannels;
+            var numFramesToCrossCorr = source.Duration - query.Duration;
             var numChunks = (numFramesToCrossCorr + (NumFramesPerTask - 1)) / NumFramesPerTask;
 
             var crossCorrChunks =
@@ -58,6 +66,8 @@ namespace AudioLoadRemover
 
             Trace.WriteLine(query.Name);
 
+            var matches = new List<Match>();
+
             maxCorrTracker.SuppressNoise();
             foreach (var maxEntry in maxCorrTracker.MaxEntries)
             {
@@ -65,7 +75,18 @@ namespace AudioLoadRemover
                 var minutes = (int)(totalSeconds / 60.0f);
                 var seconds = totalSeconds - minutes * 60.0f;
                 Trace.WriteLine($"{minutes}:{seconds} {maxEntry.Value}");
+
+                matches.Add(
+                    new Match(
+                        query,
+                        source,
+                        TimeSpan.FromSeconds(maxEntry.Index / sampleRate), 
+                        TimeSpan.FromSeconds((maxEntry.Index + query.Duration) / sampleRate), 
+                        sampleRate,
+                        maxEntry.Value));
             }
+
+            return matches;
         }
     }
 }

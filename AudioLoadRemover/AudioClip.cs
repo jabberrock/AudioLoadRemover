@@ -62,6 +62,11 @@ namespace AudioLoadRemover
             get { return this.samples; }
         }
 
+        public int Duration
+        {
+            get { return this.samples.Length / 2; }
+        }
+
         private const int NumSecondsToReadPerChunk = 60;
 
         private readonly string name;
