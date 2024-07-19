@@ -1,8 +1,14 @@
 ﻿namespace AudioLoadRemover
 {
-    internal class LoadDetector
+    public class LoadDetector
     {
-        public record Segment(TimeSpan Start, TimeSpan End, string SequenceName);
+        public record Segment(TimeSpan Start, TimeSpan End, string SequenceName)
+        {
+            public TimeSpan Duration
+            {
+                get { return this.End - this.Start; }
+            }
+        }
 
         public enum Anchor
         {

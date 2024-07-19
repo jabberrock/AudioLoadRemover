@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Formats.Tar;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -21,6 +22,8 @@ namespace AudioLoadRemover
 
             this.OpenVideoButton.Visibility = Visibility.Visible;
             this.VideoLoadedGrid.Visibility = Visibility.Hidden;
+
+            this.LoadSegmentsListView.ItemsSource = this.LoadSegments;
         }
 
         private void OpenVideo_Click(object sender, RoutedEventArgs e)
@@ -53,10 +56,13 @@ namespace AudioLoadRemover
             var currentTime = this.VideoPlayer.Clock.CurrentTime;
             if (currentTime.HasValue)
             {
+                // Prevent a loop where we update the slider, which causes the media to seek, causing stuttering
+                this.seekWhenSliderValueChanged = false;
                 this.VideoPlayerSlider.Value = currentTime.Value.TotalMilliseconds;
+                this.seekWhenSliderValueChanged = true;
 
                 var isLoading = false;
-                foreach (var loadSegment in this.loadSegments)
+                foreach (var loadSegment in this.LoadSegments)
                 {
                     if (currentTime >= loadSegment.Start && currentTime < loadSegment.End)
                     {
@@ -76,7 +82,10 @@ namespace AudioLoadRemover
 
         private void VideoPlayerSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            this.VideoPlayer.Clock.Controller.Seek(TimeSpan.FromMilliseconds(e.NewValue), TimeSeekOrigin.BeginTime);
+            if (this.seekWhenSliderValueChanged)
+            {
+                this.VideoPlayer.Clock.Controller.Seek(TimeSpan.FromMilliseconds(e.NewValue), TimeSeekOrigin.BeginTime);
+            }
         }
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)
@@ -106,6 +115,22 @@ namespace AudioLoadRemover
                 this.VideoPlayer.Clock.Controller.Seek(newTime, TimeSeekOrigin.BeginTime);
             }
         }
+
+        private void LoadSegmentsListView_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var selectedItem = this.LoadSegmentsListView.SelectedItem as LoadDetector.Segment;
+            if (selectedItem != null)
+            {
+                var startTime = selectedItem.Start - TimeSpan.FromSeconds(2.0);
+                if (startTime < TimeSpan.Zero)
+                {
+                    startTime = TimeSpan.Zero;
+                }
+
+                this.VideoPlayer.Clock.Controller.Seek(startTime, TimeSeekOrigin.BeginTime);
+            }
+        }
+
         private static TimeSpan OneFrameTime()
         {
             // Extract from video?
@@ -219,14 +244,25 @@ namespace AudioLoadRemover
 
             Trace.WriteLine($"Total load time removed: {totalLoadTime}");
 
-            Dispatcher.BeginInvoke(new Action(() => this.AddLoadSegments(loadSegments)));
+            Dispatcher.BeginInvoke(new Action(() => this.SetLoadSegments(loadSegments)));
         }
 
-        private void AddLoadSegments(List<LoadDetector.Segment> loadSegments)
+        private void SetLoadSegments(List<LoadDetector.Segment> loadSegments)
         {
-            this.loadSegments.AddRange(loadSegments);
+            this.LoadSegments.Clear();
+
+            var totalTime = TimeSpan.Zero;
+            foreach (var loadSegment in loadSegments)
+            {
+                this.LoadSegments.Add(loadSegment);
+                totalTime += loadSegment.Duration;
+            }
+
+            this.TotalLoadSegmentTimeText.Text = $"Total Load Time: {totalTime.ToString()}";
         }
 
-        private List<LoadDetector.Segment> loadSegments = new List<LoadDetector.Segment>();
+        public ObservableCollection<LoadDetector.Segment> LoadSegments { get; } = new ObservableCollection<LoadDetector.Segment>();
+
+        private bool seekWhenSliderValueChanged = true;
     }
 }

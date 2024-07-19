@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AudioLoadRemover"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="1080" Width="1920">
     <Grid>
         <Button Name="OpenVideoButton"
                 Click="OpenVideo_Click"
@@ -17,18 +17,25 @@
                 <RowDefinition />
                 <RowDefinition Height="40" />
             </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="450" />
+            </Grid.ColumnDefinitions>
             <MediaElement Name="VideoPlayer"
                           Grid.Row="0"
+                          Grid.Column="0"
                           LoadedBehavior="Pause"
                           UnloadedBehavior="Stop"
                           MediaOpened="VideoPlayer_MediaOpened"/>
             <Rectangle Name="LoadingOverlay"
                        Grid.Row="0"
+                          Grid.Column="0"
                        Panel.ZIndex="1"
                        Fill="Red"
                        Opacity="0.3"
                        Visibility="Hidden" />
-            <Grid Grid.Row="1">
+            <Grid Grid.Row="1"
+                  Grid.Column="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="40"/>
@@ -54,6 +61,23 @@
                         Grid.Column="4"
                         Click="NextFrameButton_Click">&gt;</Button>
             </Grid>
+            <ListView Name="LoadSegmentsListView"
+                      Grid.Row="0"
+                      Grid.Column="1"
+                      MouseLeftButtonUp="LoadSegmentsListView_MouseLeftButtonUp">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Start}" Header="Start" />
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=End}" Header="End" />
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Duration}" Header="Duration" />
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=SequenceName}" Header="Sequence" />
+                    </GridView>
+                </ListView.View>
+            </ListView>
+            <TextBlock Name="TotalLoadSegmentTimeText"
+                       Grid.Row="1"
+                       Grid.Column="1"
+                       TextAlignment="Right" />
         </Grid>
     </Grid>
 </Window>

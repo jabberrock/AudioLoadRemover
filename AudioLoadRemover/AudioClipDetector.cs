@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace AudioLoadRemover
 {
-    internal class AudioClipDetector
+    public class AudioClipDetector
     {
         private const int NumFramesPerTask = 1000;
 

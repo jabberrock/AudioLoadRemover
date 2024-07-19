@@ -5,7 +5,7 @@ using System.IO;
 
 namespace AudioLoadRemover
 {
-    internal class AudioClip
+    public class AudioClip
     {
         public AudioClip(string filePath, int sampleRate)
         {
