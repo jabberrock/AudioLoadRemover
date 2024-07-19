@@ -1,8 +1,11 @@
 ﻿using System.Diagnostics;
 using System.Formats.Tar;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Forms;
+using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace AudioLoadRemover
 {
@@ -30,23 +33,48 @@ namespace AudioLoadRemover
 
                 this.OpenVideoButton.Visibility = Visibility.Hidden;
 
-                this.VideoElement.Source = new Uri(videoPath);
+                var mediaTimeline = new MediaTimeline(new Uri(videoPath));
+                mediaTimeline.CurrentTimeInvalidated += MediaTimeline_CurrentTimeInvalidated;
+                this.VideoElement.Clock = mediaTimeline.CreateClock();
+                this.VideoElement.Clock.Controller.Pause();
+
                 this.VideoElement.Visibility = Visibility.Visible;
 
                 new Thread(() => ProcessVideo(videoPath)).Start();
             }
         }
-
-        private static void ProcessVideo(string videoPath)
+        private void MediaTimeline_CurrentTimeInvalidated(object? sender, EventArgs e)
         {
-            var sampleRate = 3000;
+            var currentTime = this.VideoElement.Clock.CurrentTime;
+            if (currentTime.HasValue)
+            {
+                var isLoading = false;
+                foreach (var loadSegment in this.loadSegments)
+                {
+                    if (currentTime >= loadSegment.Start && currentTime < loadSegment.End)
+                    {
+                        isLoading = true;
+                        break;
+                    }
+                }
+
+                if (isLoading)
+                {
+                    // TODO
+                }
+            }
+        }
+
+        private void ProcessVideo(string videoPath)
+        {
+            var sampleRate = 6000;
 
             var matches = new List<AudioClipDetector.Match>();
 
             var video = new AudioClip(videoPath, sampleRate);
 
             // Detect silences
-            var silenceMatches = SilenceDetector.Detect(video, TimeSpan.FromSeconds(0.5), sampleRate, 0.001f);
+            var silenceMatches = SilenceDetector.Detect(video, TimeSpan.FromSeconds(0.5), sampleRate, 1, 0.001f);
 
             Trace.WriteLine("Silence events:");
             foreach (var match in silenceMatches)
@@ -60,12 +88,13 @@ namespace AudioLoadRemover
             foreach (var audioPath in Directory.GetFiles("Riven", "*.wav"))
             {
                 var audioClip = new AudioClip(audioPath, sampleRate);
-                var clipMatches = AudioClipDetector.Detect(audioClip, video, sampleRate, 2);
+
+                var clipMatches = AudioClipDetector.Detect(audioClip, video, sampleRate, 1);
 
                 Trace.WriteLine($"{audioClip.Name} events:");
                 foreach (var match in clipMatches)
                 {
-                    Trace.WriteLine($"{match.StartTime}-{match.EndTime}");
+                    Trace.WriteLine($"{match.StartTime}-{match.EndTime} correlation {match.Correlation}");
                 }
 
                 matches.AddRange(clipMatches);
@@ -82,14 +111,52 @@ namespace AudioLoadRemover
             // Detect load segments
             var config = new List<LoadDetector.Sequence>()
             {
-                new LoadDetector.Sequence("Linking", "SW_RivenLink", "SILENCE", TimeSpan.Zero, TimeSpan.Zero),
-                new LoadDetector.Sequence("Dome Entry", "SW_FMD_Inside_Close", "SW_FMD_InnerShell_Open", TimeSpan.Zero, TimeSpan.Zero),
-                new LoadDetector.Sequence("Dome Exit", "SW_FMD_InnerShell_Close", "SW_FMD_Inside_Open", TimeSpan.Zero, TimeSpan.Zero),
-                new LoadDetector.Sequence("Maglev", "SW_Maglev", "SILENCE", TimeSpan.Zero, TimeSpan.Zero),
-                new LoadDetector.Sequence("Woodcart", "SW_Woodcart", "SILENCE", TimeSpan.Zero, TimeSpan.Zero),
+                new LoadDetector.Sequence(
+                    "Linking",
+                    "Linking",
+                    "SILENCE",
+                    // Loading... screen shows up at different times after the linking sound plays
+                    new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.Zero),
+                    new LoadDetector.Offset(LoadDetector.Anchor.End, TimeSpan.Zero)),
+
+                new LoadDetector.Sequence(
+                    "Dome Entry",
+                    "EnterDome",
+                    "EnterInnerDome",
+                    new LoadDetector.Offset(LoadDetector.Anchor.End, TimeSpan.Zero),
+                    new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.Zero)),
+
+                new LoadDetector.Sequence(
+                    "Dome Exit",
+                    "ExitInnerDome",
+                    "ExitDome",
+                    new LoadDetector.Offset(LoadDetector.Anchor.End, TimeSpan.Zero),
+                    new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.Zero)),
+
+                new LoadDetector.Sequence(
+                    "Maglev",
+                    "Maglev",
+                    "SILENCE",
+                    // Fade out hapens at different times after the Maglev takes off
+                    new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.Zero),
+                    new LoadDetector.Offset(LoadDetector.Anchor.End, TimeSpan.Zero)),
+
+                new LoadDetector.Sequence(
+                    "Woodcart",
+                    "Woodcart",
+                    "SILENCE",
+                    // Fade out happens at different times after the Woodcart takes off
+                    new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.Zero),
+                    new LoadDetector.Offset(LoadDetector.Anchor.End, TimeSpan.Zero)),
             };
 
             var loadSegments = LoadDetector.Detect(orderedMatches, config);
+
+            // Remove initial linking segments which are not part of the timing
+            while (loadSegments.Count > 0 && loadSegments[0].SequenceName == "Linking")
+            {
+                loadSegments.RemoveAt(0);
+            }
 
             Trace.WriteLine("Detected loads:");
             foreach (var loadSegment in loadSegments)
@@ -104,6 +171,15 @@ namespace AudioLoadRemover
             }
 
             Trace.WriteLine($"Total load time removed: {totalLoadTime}");
+
+            Dispatcher.BeginInvoke(new Action(() => this.AddLoadSegments(loadSegments)));
         }
+
+        private void AddLoadSegments(List<LoadDetector.Segment> loadSegments)
+        {
+            this.loadSegments.AddRange(loadSegments);
+        }
+
+        private List<LoadDetector.Segment> loadSegments = new List<LoadDetector.Segment>();
     }
 }

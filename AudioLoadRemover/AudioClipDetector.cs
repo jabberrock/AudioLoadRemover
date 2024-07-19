@@ -15,6 +15,7 @@ namespace AudioLoadRemover
             int SampleRate,
             float Correlation);
 
+        // TODO: Remove numChannels since we're dealing with mono audio clips
         public static List<Match> Detect(AudioClip query, AudioClip source, int sampleRate, int numChannels)
         {
             Trace.WriteLine($"Searching for audio clip {query.Name} within {source.Name}");
@@ -39,8 +40,8 @@ namespace AudioLoadRemover
                             {
                                 float corr = 0.0f;
 
-                                for (var j = 0;
-                                     j < querySamples.Length - Vector<float>.Count; // Don't go off the end of querySamples
+                                for (var j = query.SilentPrefix * numChannels;
+                                     j < querySamples.Length - (query.SilentSuffix * numChannels) - Vector<float>.Count; // Don't go off the end of querySamples
                                      j += Vector<float>.Count)
                                 {
                                     var v1 = new Vector<float>(querySamples, j);

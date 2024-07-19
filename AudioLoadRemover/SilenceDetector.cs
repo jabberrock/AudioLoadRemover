@@ -2,11 +2,9 @@
 {
     internal class SilenceDetector
     {
-        public static List<AudioClipDetector.Match> Detect(AudioClip clip, TimeSpan minSilenceTime, int sampleRate, float silenceLevel)
+        public static List<AudioClipDetector.Match> Detect(AudioClip clip, TimeSpan minSilenceTime, int sampleRate, int numChannels, float silenceLevel)
         {
             var silences = new List<AudioClipDetector.Match>();
-
-            var numChannels = 2;
 
             TimeSpan? startTime = null;
             var samples = clip.Samples;

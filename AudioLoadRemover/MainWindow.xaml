@@ -8,6 +8,6 @@
         Title="MainWindow" Height="450" Width="800">
     <Grid>
         <Button Name="OpenVideoButton" Click="OpenVideo_Click">Open Video</Button>
-        <MediaElement Name="VideoElement" Visibility="Hidden" />
+        <MediaElement Name="VideoElement" LoadedBehavior="Pause" Visibility="Hidden" />
     </Grid>
 </Window>

@@ -4,14 +4,22 @@
     {
         public record Segment(TimeSpan Start, TimeSpan End, string SequenceName);
 
+        public enum Anchor
+        {
+            Start,
+            End,
+        }
+
+        public record Offset(Anchor Anchor, TimeSpan TimeSpan);
+
         public record Sequence(
             string Name,
             string StartClipName,
             string EndClipName,
-            TimeSpan StartOffset,
-            TimeSpan EndOffset)
+            Offset StartOffset,
+            Offset EndOffset)
         {
-            public static readonly TimeSpan MaxTimeBetweenEvents = TimeSpan.FromSeconds(20.0);
+            public static readonly TimeSpan MaxTimeBetweenEvents = TimeSpan.FromSeconds(60.0);
 
             public List<Segment> Match(List<AudioClipDetector.Match> orderedMatches)
             {
@@ -22,7 +30,17 @@
                         (orderedMatches[i + 1].QueryName == this.EndClipName) &&
                         (orderedMatches[i + 1].StartTime - orderedMatches[i].EndTime < MaxTimeBetweenEvents))
                     {
-                        sequenceMatches.Add(new Segment(orderedMatches[i].StartTime, orderedMatches[i + 1].EndTime, this.Name));
+                        var loadStartTime =
+                            this.StartOffset.Anchor == Anchor.Start
+                                ? orderedMatches[i].StartTime + this.StartOffset.TimeSpan
+                                : orderedMatches[i].EndTime + this.StartOffset.TimeSpan;
+
+                        var loadEndTime =
+                            this.EndOffset.Anchor == Anchor.Start
+                                ? orderedMatches[i + 1].StartTime + this.EndOffset.TimeSpan
+                                : orderedMatches[i + 1].EndTime + this.EndOffset.TimeSpan;
+
+                        sequenceMatches.Add(new Segment(loadStartTime, loadEndTime, this.Name));
                     }
                 }
 

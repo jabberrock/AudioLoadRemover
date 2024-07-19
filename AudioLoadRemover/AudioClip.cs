@@ -22,11 +22,11 @@ namespace AudioLoadRemover
             this.waveFormat = audioMediaReader.WaveFormat;
 
             var audioSampleProvider = audioMediaResampler.ToSampleProvider();
-            if (audioMediaReader.WaveFormat.Channels == 1)
+            if (audioMediaReader.WaveFormat.Channels == 2)
             {
-                audioSampleProvider = new MonoToStereoSampleProvider(audioSampleProvider);
+                audioSampleProvider = new StereoToMonoSampleProvider(audioSampleProvider);
             }
-            else if (audioMediaReader.WaveFormat.Channels != 2)
+            else if (audioMediaReader.WaveFormat.Channels > 2)
             {
                 throw new Exception("Audio clip has more than 2 channels");
             }
@@ -45,6 +45,28 @@ namespace AudioLoadRemover
             }
 
             this.samples = samples.ToArray();
+
+            this.silentPrefix = 0;
+            for (var i = 0; i < this.samples.Length; ++i)
+            {
+                if (Math.Abs(this.samples[i]) > MaxSilenceLevel)
+                {
+                    break;
+                }
+
+                ++this.silentPrefix;
+            }
+
+            this.silentSuffix = 0;
+            for (var i = this.samples.Length - 1; i >= 0; --i)
+            {
+                if (Math.Abs(this.samples[i]) > MaxSilenceLevel)
+                {
+                    break;
+                }
+
+                ++this.silentSuffix;
+            }
         }
 
         public string Name
@@ -64,13 +86,26 @@ namespace AudioLoadRemover
 
         public int Duration
         {
-            get { return this.samples.Length / 2; }
+            get { return this.samples.Length; }
+        }
+
+        public int SilentPrefix
+        {
+            get { return this.silentPrefix; }
+        }
+
+        public int SilentSuffix
+        {
+            get { return this.silentSuffix; }
         }
 
         private const int NumSecondsToReadPerChunk = 60;
+        private const float MaxSilenceLevel = 0.001f;
 
         private readonly string name;
         private readonly WaveFormat waveFormat;
         private readonly float[] samples;
+        private readonly int silentPrefix;
+        private readonly int silentSuffix;
     }
 }
