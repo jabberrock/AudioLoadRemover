@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
 namespace AudioLoadRemover
@@ -17,6 +18,9 @@ namespace AudioLoadRemover
         public MainWindow()
         {
             InitializeComponent();
+
+            this.OpenVideoButton.Visibility = Visibility.Visible;
+            this.VideoLoadedGrid.Visibility = Visibility.Hidden;
         }
 
         private void OpenVideo_Click(object sender, RoutedEventArgs e)
@@ -35,19 +39,22 @@ namespace AudioLoadRemover
 
                 var mediaTimeline = new MediaTimeline(new Uri(videoPath));
                 mediaTimeline.CurrentTimeInvalidated += MediaTimeline_CurrentTimeInvalidated;
-                this.VideoElement.Clock = mediaTimeline.CreateClock();
-                this.VideoElement.Clock.Controller.Pause();
+                this.VideoPlayer.Clock = mediaTimeline.CreateClock();
+                this.VideoPlayer.Clock.Controller.Pause();
+                this.VideoPlayer.ScrubbingEnabled = true;
 
-                this.VideoElement.Visibility = Visibility.Visible;
+                this.VideoLoadedGrid.Visibility = Visibility.Visible;
 
                 new Thread(() => ProcessVideo(videoPath)).Start();
             }
         }
         private void MediaTimeline_CurrentTimeInvalidated(object? sender, EventArgs e)
         {
-            var currentTime = this.VideoElement.Clock.CurrentTime;
+            var currentTime = this.VideoPlayer.Clock.CurrentTime;
             if (currentTime.HasValue)
             {
+                this.VideoPlayerSlider.Value = currentTime.Value.TotalMilliseconds;
+
                 var isLoading = false;
                 foreach (var loadSegment in this.loadSegments)
                 {
@@ -57,12 +64,52 @@ namespace AudioLoadRemover
                         break;
                     }
                 }
-
-                if (isLoading)
-                {
-                    // TODO
-                }
+                
+                this.LoadingOverlay.Visibility = isLoading ? Visibility.Visible : Visibility.Hidden;
             }
+        }
+
+        private void VideoPlayer_MediaOpened(object sender, RoutedEventArgs e)
+        {
+            this.VideoPlayerSlider.Maximum = this.VideoPlayer.NaturalDuration.TimeSpan.TotalMilliseconds;
+        }
+
+        private void VideoPlayerSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            this.VideoPlayer.Clock.Controller.Seek(TimeSpan.FromMilliseconds(e.NewValue), TimeSeekOrigin.BeginTime);
+        }
+
+        private void PlayButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.VideoPlayer.Clock.Controller.Resume();
+        }
+
+        private void PauseButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.VideoPlayer.Clock.Controller.Pause();
+        }
+        private void PreviousFrameButton_Click(object sender, RoutedEventArgs e)
+        {
+            var currentTime = this.VideoPlayer.Clock.CurrentTime;
+            if (currentTime.HasValue)
+            {
+                var newTime = currentTime.Value - OneFrameTime();
+                this.VideoPlayer.Clock.Controller.Seek(newTime, TimeSeekOrigin.BeginTime);
+            }
+        }
+        private void NextFrameButton_Click(object sender, RoutedEventArgs e)
+        {
+            var currentTime = this.VideoPlayer.Clock.CurrentTime;
+            if (currentTime.HasValue)
+            {
+                var newTime = currentTime.Value + OneFrameTime();
+                this.VideoPlayer.Clock.Controller.Seek(newTime, TimeSeekOrigin.BeginTime);
+            }
+        }
+        private static TimeSpan OneFrameTime()
+        {
+            // Extract from video?
+            return TimeSpan.FromMilliseconds(1000.0 / 60.0);
         }
 
         private void ProcessVideo(string videoPath)

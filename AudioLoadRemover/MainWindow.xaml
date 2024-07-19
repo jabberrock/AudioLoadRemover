@@ -7,7 +7,53 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <Button Name="OpenVideoButton" Click="OpenVideo_Click">Open Video</Button>
-        <MediaElement Name="VideoElement" LoadedBehavior="Pause" Visibility="Hidden" />
+        <Button Name="OpenVideoButton"
+                Click="OpenVideo_Click"
+                Visibility="Hidden">
+            Open Video
+        </Button>
+        <Grid Name="VideoLoadedGrid">
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition Height="40" />
+            </Grid.RowDefinitions>
+            <MediaElement Name="VideoPlayer"
+                          Grid.Row="0"
+                          LoadedBehavior="Pause"
+                          UnloadedBehavior="Stop"
+                          MediaOpened="VideoPlayer_MediaOpened"/>
+            <Rectangle Name="LoadingOverlay"
+                       Grid.Row="0"
+                       Panel.ZIndex="1"
+                       Fill="Red"
+                       Opacity="0.3"
+                       Visibility="Hidden" />
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="40"/>
+                    <ColumnDefinition Width="40" />
+                    <ColumnDefinition Width="40" />
+                    <ColumnDefinition Width="40" />
+                </Grid.ColumnDefinitions>
+                <Slider Name="VideoPlayerSlider"
+                        Grid.Column="0"
+                        VerticalAlignment="Center"
+                        TickFrequency="300000.0"
+                        ValueChanged="VideoPlayerSlider_ValueChanged"/>
+                <Button Name="PlayButton"
+                        Grid.Column="1"
+                        Click="PlayButton_Click">&#x23F5;</Button>
+                <Button Name="PauseButton"
+                        Grid.Column="2"
+                        Click="PauseButton_Click">&#x23F8;</Button>
+                <Button Name="PreviousFrameButton"
+                        Grid.Column="3"
+                        Click="PreviousFrameButton_Click">&lt;</Button>
+                <Button Name="NextFrameButton"
+                        Grid.Column="4"
+                        Click="NextFrameButton_Click">&gt;</Button>
+            </Grid>
+        </Grid>
     </Grid>
 </Window>
