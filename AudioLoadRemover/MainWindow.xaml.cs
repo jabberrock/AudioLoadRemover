@@ -50,6 +50,8 @@ namespace AudioLoadRemover
 
                 this.VideoLoadedGrid.Visibility = Visibility.Visible;
 
+                this.Title = this.Title + " - " + Path.GetFileNameWithoutExtension(videoPath);
+
                 new Thread(() => ProcessVideo(videoPath)).Start();
             }
         }
