@@ -8,6 +8,26 @@
             {
                 get { return this.End - this.Start; }
             }
+
+            public bool Overlaps(Segment otherSegment)
+            {
+                return this.Start < otherSegment.End && otherSegment.Start < this.End;
+            }
+
+            public string StartString
+            {
+                get { return TimeSpanFormatter.ToShortString(this.Start); }
+            }
+
+            public string EndString
+            {
+                get { return TimeSpanFormatter.ToShortString(this.End); }
+            }
+
+            public string DurationString
+            {
+                get { return TimeSpanFormatter.ToShortString(this.Duration); }
+            }
         }
 
         public enum Anchor

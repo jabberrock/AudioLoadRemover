@@ -1,9 +1,11 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Formats.Tar;
+using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Forms;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -128,6 +130,57 @@ namespace AudioLoadRemover
                 }
 
                 this.VideoPlayer.Clock.Controller.Seek(startTime, TimeSeekOrigin.BeginTime);
+
+                this.DeleteLoadSegmentButton.IsEnabled = selectedItem.SequenceName == ManualSequenceName;
+            }
+        }
+
+        private void StartManualLoadButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.manualStartTime = this.VideoPlayer.Clock.CurrentTime;
+        }
+
+        private void EndManualLoadButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.manualStartTime.HasValue)
+            {
+                var currentTime = this.VideoPlayer.Clock.CurrentTime;
+                if (currentTime.HasValue && currentTime.Value > manualStartTime.Value)
+                {
+                    var newSegment = new LoadDetector.Segment(this.manualStartTime.Value, currentTime.Value, ManualSequenceName);
+
+                    var overlaps = this.LoadSegments.Any(s => s.Overlaps(newSegment));
+                    if (!overlaps)
+                    {
+                        var added = false;
+                        for (var i = 0; i < this.LoadSegments.Count; ++i)
+                        {
+                            if (this.LoadSegments[i].Start > newSegment.Start)
+                            {
+                                this.LoadSegments.Insert(i, newSegment);
+                                added = true;
+                                break;
+                            }
+                        }
+
+                        if (!added)
+                        {
+                            this.LoadSegments.Add(newSegment);
+                        }
+
+                        this.UpdateTotalLoadTime();
+                    }
+                }
+            }
+        }
+
+        private void DeleteLoadSegmentButton_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedItem = this.LoadSegmentsListView.SelectedItem as LoadDetector.Segment;
+            if (selectedItem != null && selectedItem.SequenceName == ManualSequenceName)
+            {
+                this.LoadSegments.Remove(selectedItem);
+                this.UpdateTotalLoadTime();
             }
         }
 
@@ -246,7 +299,11 @@ namespace AudioLoadRemover
 
             Trace.WriteLine($"Total load time removed: {totalLoadTime}");
 
-            Dispatcher.BeginInvoke(new Action(() => this.SetLoadSegments(loadSegments)));
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                this.SetLoadSegments(loadSegments);
+                this.UpdateTotalLoadTime();
+            }));
         }
 
         private void SetLoadSegments(List<LoadDetector.Segment> loadSegments)
@@ -260,11 +317,30 @@ namespace AudioLoadRemover
                 totalTime += loadSegment.Duration;
             }
 
-            this.TotalLoadSegmentTimeText.Text = $"Total Load Time: {totalTime.ToString()}";
         }
+
+        private void UpdateTotalLoadTime()
+        {
+            var hasManual = false;
+            var totalTime = TimeSpan.Zero;
+            foreach (var loadSegment in this.LoadSegments)
+            {
+                totalTime += loadSegment.Duration;
+                if (loadSegment.SequenceName == ManualSequenceName)
+                {
+                    hasManual = true;
+                }
+            }
+
+            this.TotalLoadSegmentTimeText.Text = $"Total Load Time: {(hasManual ? ManualTimeMarker : "")}{TimeSpanFormatter.ToShortString(totalTime)}";
+        }
+
+        private const string ManualSequenceName = "**** MANUAL ****";
+        private const string ManualTimeMarker = "****";
 
         public ObservableCollection<LoadDetector.Segment> LoadSegments { get; } = new ObservableCollection<LoadDetector.Segment>();
 
         private bool seekWhenSliderValueChanged = true;
+        private TimeSpan? manualStartTime = null;
     }
 }
