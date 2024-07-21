@@ -29,21 +29,21 @@ The load starts when the linking sound starts playing. The load ends very
 shortly after arriving at the destination (when the background ambiance audio
 starts to play).
 
-![Linking](Riven/load-linking.mp4)
+https://github.com/jabberrock/AudioLoadRemover/raw/master/Riven/load-linking.mp4
 
 ### Entering a dome
 
 The load starts when the outer dome fully closes and you hear a "clunk". The
 load ends when the inner door starts to open.
 
-![Entering a dome](Riven/load-enter-dome.mp4)
+https://github.com/jabberrock/AudioLoadRemover/raw/master/Riven/load-enter-dome.mp4
 
 ### Exiting a dome
 
 The load starts when the inner door starts to close and you hear a sound like
 chains being dragged. The load ends when the outer dome fully opens and you hear a "clunk".
 
-![Exiting a dome](Riven/load-exit-dome.mp4)
+https://github.com/jabberrock/AudioLoadRemover/raw/master/Riven/load-exit-dome.mp4
 
 ### Riding a Maglev
 
@@ -51,7 +51,7 @@ The load starts when the vehicle audio starts (shortly after the vehicle starts
 moving). The load ends very shortly after arriving at the destination (when the
 background ambiance audio starts to play).
 
-![Riding a Maglev](Riven/load-maglev.mp4)
+https://github.com/jabberrock/AudioLoadRemover/raw/master/Riven/load-maglev.mp4
 
 ### Riding a Minecart
 
@@ -59,4 +59,4 @@ The load starts when the vehicle audio starts (shortly after the vehicle starts
 moving). The load ends very shortly after arriving at the destination (when the
 background ambiance audio starts to play).
 
-![Riding a Minecart](Riven/load-woodcart.mp4)
+https://github.com/jabberrock/AudioLoadRemover/raw/master/Riven/load-woodcart.mp4
