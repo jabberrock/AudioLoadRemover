@@ -9,51 +9,29 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Riven\Backup\**" />
-    <EmbeddedResource Remove="Riven\Backup\**" />
-    <None Remove="Riven\Backup\**" />
-    <Page Remove="Riven\Backup\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="NAudio" Version="2.2.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Riven\EnterDome.wav">
+    <None Update="Riven\Clips\SW_FMD_InnerShell_Close.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Riven\EnterInnerDome.wav">
+    <None Update="Riven\Clips\SW_FMD_InnerShell_Open.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Riven\ExitDome.wav">
+    <None Update="Riven\Clips\SW_FMD_Inside_Close.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Riven\ExitInnerDome.wav">
+    <None Update="Riven\Clips\SW_FMD_Inside_Open.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Riven\Linking.wav">
+    <None Update="Riven\Clips\SW_Maglev_TPLDeparture.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Riven\Maglev.wav">
+    <None Update="Riven\Clips\SW_RivenLink.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Riven\SW_FMD_InnerShell_Close.wav">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Riven\SW_FMD_InnerShell_Open.wav">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Riven\SW_FMD_Inside_Close.wav">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Riven\SW_FMD_Inside_Open.wav">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Riven\SW_RivenLink.wav">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Riven\Woodcart.wav">
+    <None Update="Riven\Clips\SW_Woodcart_JNGToBLR_Start.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

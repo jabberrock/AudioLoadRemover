@@ -139,7 +139,7 @@ namespace AudioLoadRemover
 
         private void ProcessVideo(string videoPath)
         {
-            var sampleRate = 6000;
+            var sampleRate = 3000;
 
             var matches = new List<AudioClipDetector.Match>();
 
@@ -157,7 +157,7 @@ namespace AudioLoadRemover
             matches.AddRange(silenceMatches);
 
             // Detect clips
-            foreach (var audioPath in Directory.GetFiles("Riven", "*.wav"))
+            foreach (var audioPath in Directory.GetFiles(@"Riven\Clips", "*.wav"))
             {
                 var audioClip = new AudioClip(audioPath, sampleRate);
 
@@ -185,39 +185,40 @@ namespace AudioLoadRemover
             {
                 new LoadDetector.Sequence(
                     "Linking",
-                    "Linking",
+                    "SW_RivenLink",
                     "SILENCE",
-                    // Loading... screen shows up at different times after the linking sound plays
                     new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.Zero),
                     new LoadDetector.Offset(LoadDetector.Anchor.End, TimeSpan.Zero)),
 
                 new LoadDetector.Sequence(
                     "Dome Entry",
-                    "EnterDome",
-                    "EnterInnerDome",
-                    new LoadDetector.Offset(LoadDetector.Anchor.End, TimeSpan.Zero),
+                    "SW_FMD_Inside_Close",
+                    "SW_FMD_InnerShell_Open",
+                    // Outside dome goes "clunk" as it slams shut
+                    new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.FromSeconds(6.446)),
+                    // Inside door starts to open (gas hissing)
                     new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.Zero)),
 
                 new LoadDetector.Sequence(
                     "Dome Exit",
-                    "ExitInnerDome",
-                    "ExitDome",
-                    new LoadDetector.Offset(LoadDetector.Anchor.End, TimeSpan.Zero),
-                    new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.Zero)),
+                    "SW_FMD_InnerShell_Close",
+                    "SW_FMD_Inside_Open",
+                    // Inside door starts to close (chains)
+                    new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.FromSeconds(0.721)),
+                    // Outside dome goes "clunk" as it opens fully
+                    new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.FromSeconds(6.565))),
 
                 new LoadDetector.Sequence(
                     "Maglev",
-                    "Maglev",
+                    "SW_Maglev_TPLDeparture",
                     "SILENCE",
-                    // Fade out hapens at different times after the Maglev takes off
                     new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.Zero),
                     new LoadDetector.Offset(LoadDetector.Anchor.End, TimeSpan.Zero)),
 
                 new LoadDetector.Sequence(
                     "Woodcart",
-                    "Woodcart",
+                    "SW_Woodcart_JNGToBLR_Start",
                     "SILENCE",
-                    // Fade out happens at different times after the Woodcart takes off
                     new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.Zero),
                     new LoadDetector.Offset(LoadDetector.Anchor.End, TimeSpan.Zero)),
             };
