@@ -130,8 +130,6 @@ namespace AudioLoadRemover
                 }
 
                 this.VideoPlayer.Clock.Controller.Seek(startTime, TimeSeekOrigin.BeginTime);
-
-                this.DeleteLoadSegmentButton.IsEnabled = selectedItem.SequenceName == ManualSequenceName;
             }
         }
 

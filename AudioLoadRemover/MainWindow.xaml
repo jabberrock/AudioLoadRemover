@@ -105,8 +105,7 @@
                 </TextBlock>
                 <Button Name="DeleteLoadSegmentButton"
                         Grid.Column="1"
-                        Click="DeleteLoadSegmentButton_Click"
-                        IsEnabled="False">
+                        Click="DeleteLoadSegmentButton_Click">
                     <TextBlock TextAlignment="Center">
                         Delete<LineBreak/>Segment
                     </TextBlock>
