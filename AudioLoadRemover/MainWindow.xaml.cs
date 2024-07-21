@@ -146,6 +146,7 @@ namespace AudioLoadRemover
             var video = new AudioClip(videoPath, sampleRate);
 
             // Detect silences
+            // TODO: Calculate median loudness of video and normalize it
             var silenceMatches = SilenceDetector.Detect(video, TimeSpan.FromSeconds(0.5), sampleRate, 1, 0.001f);
 
             Trace.WriteLine("Silence events:");
