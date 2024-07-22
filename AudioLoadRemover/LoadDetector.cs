@@ -56,6 +56,13 @@
                         (orderedMatches[i + 1].QueryName == this.EndClipName) &&
                         (orderedMatches[i + 1].StartTime - orderedMatches[i].EndTime < MaxTimeBetweenEvents))
                     {
+                        // HACK: We want the silences to be very close to the end of the start clip
+                        if ((this.EndClipName == "SILENCE") &&
+                            orderedMatches[i + 1].StartTime > orderedMatches[i].EndTime + TimeSpan.FromSeconds(5.0))
+                        {
+                            continue;
+                        }
+
                         var loadStartTime =
                             this.StartOffset.Anchor == Anchor.Start
                                 ? orderedMatches[i].StartTime + this.StartOffset.TimeSpan

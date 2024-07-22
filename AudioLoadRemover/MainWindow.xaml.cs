@@ -1,11 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Formats.Tar;
-using System.Globalization;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Windows;
-using System.Windows.Data;
 using System.Windows.Forms;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -177,7 +173,7 @@ namespace AudioLoadRemover
         private void DeleteLoadSegmentButton_Click(object sender, RoutedEventArgs e)
         {
             var selectedItem = this.LoadSegmentsListView.SelectedItem as LoadDetector.Segment;
-            if (selectedItem != null && selectedItem.SequenceName == ManualSequenceName)
+            if (selectedItem != null)
             {
                 this.LoadSegments.Remove(selectedItem);
                 this.UpdateTotalLoadTime();
@@ -200,7 +196,7 @@ namespace AudioLoadRemover
 
             // Detect silences
             // TODO: Calculate median loudness of video and normalize it
-            var silenceMatches = SilenceDetector.Detect(video, TimeSpan.FromSeconds(0.5), sampleRate, 1, 0.001f);
+            var silenceMatches = SilenceDetector.Detect(video, TimeSpan.FromSeconds(0.2), sampleRate, 1, 0.0001f);
 
             Trace.WriteLine("Silence events:");
             foreach (var match in silenceMatches)
