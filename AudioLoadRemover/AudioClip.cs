@@ -1,7 +1,6 @@
 ﻿using NAudio.Dsp;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
-using System.Diagnostics;
 using System.IO;
 
 namespace AudioLoadRemover
@@ -17,7 +16,6 @@ namespace AudioLoadRemover
             var highPassFilteredSamples = new List<float>();
             var rawSamples = new List<float>();
 
-            using var audioStream = new MemoryStream();
             using var audioMediaReader = new MediaFoundationReader(filePath);
             using var audioMediaResampler = new MediaFoundationResampler(audioMediaReader, sampleRate);
 
@@ -31,7 +29,7 @@ namespace AudioLoadRemover
                 throw new Exception("Audio clip has more than 2 channels");
             }
 
-            this.waveFormat = audioSampleProvider.WaveFormat;
+            this.waveFormat = WaveFormat.CreateCustomFormat(WaveFormatEncoding.Pcm, sampleRate, 1, 2 * sampleRate * 1, 4, 16);
 
             // The audio clip that we search for usually has high frequency sounds, whereas
             // the background sounds are often low frequency. Apply a high pass filter to
@@ -84,6 +82,16 @@ namespace AudioLoadRemover
 
                 ++this.silentSuffix;
             }
+
+            using (var waveFileWriter = new WaveFileWriter(Path.Combine(debugOutput.Folder, $"audio-{this.name}.wav"), this.waveFormat))
+            {
+                var silenceSamples = new float[NumSecPrefixAndSuffix * sampleRate];
+                waveFileWriter.WriteSamples(silenceSamples, 0, silenceSamples.Length);
+
+                waveFileWriter.WriteSamples(this.highPassFilteredSamples, 0, this.highPassFilteredSamples.Length);
+
+                waveFileWriter.WriteSamples(silenceSamples, 0, silenceSamples.Length);
+            }
         }
 
         public string Name
@@ -123,6 +131,7 @@ namespace AudioLoadRemover
 
         private const int NumSecondsToReadPerChunk = 60;
         private const float MaxSilenceLevel = 0.001f;
+        private const int NumSecPrefixAndSuffix = 5;
 
         private readonly string name;
         private readonly WaveFormat waveFormat;

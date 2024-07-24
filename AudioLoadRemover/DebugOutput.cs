@@ -7,7 +7,7 @@ namespace AudioLoadRemover
     {
         public DebugOutput(string videoPath)
         {
-            this.folderPath = Path.Combine(Path.GetTempPath(), $"{FolderPrefix}-{Path.GetFileNameWithoutExtension(videoPath)}-{DateTime.Now:yyyyMMddTHHmmss}");
+            this.folderPath = Path.Combine(Path.GetTempPath(), $"{FolderPrefix}-{DateTime.Now:yyyyMMddTHHmmss}-{Path.GetFileNameWithoutExtension(videoPath)}");
             Directory.CreateDirectory(folderPath);
 
             this.logWriter = new StreamWriter(Path.Combine(this.folderPath, LogFileName));
@@ -20,9 +20,9 @@ namespace AudioLoadRemover
             this.logWriter.WriteLine(message);
         }
 
-        public string FilePath(string fileName)
+        public string Folder
         {
-            return Path.Combine(this.folderPath, fileName);
+            get { return this.folderPath; }
         }
 
         public void Dispose()

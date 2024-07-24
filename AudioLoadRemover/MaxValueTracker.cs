@@ -41,7 +41,7 @@
             this.recentIndex = (this.recentIndex + 1) % this.recent.Length;
         }
 
-        public void SuppressNoise()
+        public void SuppressNoise(float threshold)
         {
             if (maxEntries.Count == 0)
             {
@@ -49,7 +49,7 @@
             }
 
             var maxValue = maxEntries.Max(e => e.Value);
-            maxEntries.RemoveAll(e => e.Value < 0.8 * maxValue);
+            maxEntries.RemoveAll(e => e.Value < threshold * maxValue);
         }
 
         public List<Entry> MaxEntries

@@ -1,5 +1,5 @@
-﻿using System.Collections.ObjectModel;
-using System.Diagnostics;
+﻿using NAudio.Wave;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Forms;
@@ -284,9 +284,20 @@ namespace AudioLoadRemover
             }
 
             debugOutput.Log("Detected loads:");
-            foreach (var loadSegment in loadSegments)
+            for (var i = 0; i < loadSegments.Count; ++i)
             {
+                var loadSegment = loadSegments[i];
+
                 debugOutput.Log($"{loadSegment.Start}-{loadSegment.End} due to {loadSegment.SequenceName}");
+
+                using (var waveFileWriter = new WaveFileWriter(Path.Combine(debugOutput.Folder, $"load-{i}-{loadSegment.SequenceName}.wav"), video.WaveFormat))
+                {
+                    var startSampleIndex = Math.Max(0, (int)(loadSegment.Start.TotalSeconds * sampleRate) - (NumSecPrefixAndSuffix * sampleRate));
+                    var endSampleIndex = Math.Min((int)(loadSegment.End.TotalSeconds * sampleRate) + (NumSecPrefixAndSuffix * sampleRate), video.Duration);
+
+                    var matchSamples = new ReadOnlySpan<float>(video.HighPassFilteredSamples, startSampleIndex, endSampleIndex - startSampleIndex).ToArray();
+                    waveFileWriter.WriteSamples(matchSamples, 0, matchSamples.Length);
+                }
             }
 
             var totalLoadTime = TimeSpan.Zero;
@@ -335,7 +346,7 @@ namespace AudioLoadRemover
 
         private const string ManualSequenceName = "**** MANUAL ****";
         private const string ManualTimeMarker = "****";
-
+        private const int NumSecPrefixAndSuffix = 5;
         public ObservableCollection<LoadDetector.Segment> LoadSegments { get; } = new ObservableCollection<LoadDetector.Segment>();
 
         private bool seekWhenSliderValueChanged = true;
