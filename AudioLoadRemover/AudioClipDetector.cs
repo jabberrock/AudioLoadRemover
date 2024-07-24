@@ -16,9 +16,9 @@ namespace AudioLoadRemover
             float Correlation);
 
         // TODO: Remove numChannels since we're dealing with mono audio clips
-        public static List<Match> Detect(AudioClip query, AudioClip source, int sampleRate, int numChannels)
+        public static List<Match> Detect(AudioClip query, AudioClip source, int sampleRate, int numChannels, DebugOutput debugOutput)
         {
-            Trace.WriteLine($"Searching for audio clip {query.Name} within {source.Name}");
+            debugOutput.Log($"Searching for audio clip {query.Name} within {source.Name}");
 
             var querySamples = query.HighPassFilteredSamples;
             var sourceSamples = source.HighPassFilteredSamples;

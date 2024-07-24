@@ -8,11 +8,11 @@ namespace AudioLoadRemover
 {
     public class AudioClip
     {
-        public AudioClip(string filePath, int sampleRate)
+        public AudioClip(string filePath, int sampleRate, DebugOutput debugOutput)
         {
             this.name = Path.GetFileNameWithoutExtension(filePath);
 
-            Trace.WriteLine($"Loading audio clip {this.name} from {filePath}");
+            debugOutput.Log($"Loading audio clip {this.name} from {filePath}");
 
             var highPassFilteredSamples = new List<float>();
             var rawSamples = new List<float>();

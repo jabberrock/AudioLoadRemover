@@ -188,20 +188,22 @@ namespace AudioLoadRemover
 
         private void ProcessVideo(string videoPath)
         {
+            using var debugOutput = new DebugOutput(videoPath);
+
             var sampleRate = 3000;
 
             var matches = new List<AudioClipDetector.Match>();
 
-            var video = new AudioClip(videoPath, sampleRate);
+            var video = new AudioClip(videoPath, sampleRate, debugOutput);
 
             // Detect silences
             // TODO: Calculate median loudness of video and normalize it
             var silenceMatches = SilenceDetector.Detect(video, TimeSpan.FromSeconds(0.2), 2.0f / (1 << 16));
 
-            Trace.WriteLine("Silence events:");
+            debugOutput.Log("Silence events:");
             foreach (var match in silenceMatches)
             {
-                Trace.WriteLine($"{match.StartTime}-{match.EndTime}");
+                debugOutput.Log($"{match.StartTime}-{match.EndTime}");
             }
 
             matches.AddRange(silenceMatches);
@@ -209,14 +211,14 @@ namespace AudioLoadRemover
             // Detect clips
             foreach (var audioPath in Directory.GetFiles(@"Riven\Clips", "*.wav"))
             {
-                var audioClip = new AudioClip(audioPath, sampleRate);
+                var audioClip = new AudioClip(audioPath, sampleRate, debugOutput);
 
-                var clipMatches = AudioClipDetector.Detect(audioClip, video, sampleRate, 1);
+                var clipMatches = AudioClipDetector.Detect(audioClip, video, sampleRate, 1, debugOutput);
 
-                Trace.WriteLine($"{audioClip.Name} events:");
+                debugOutput.Log($"{audioClip.Name} events:");
                 foreach (var match in clipMatches)
                 {
-                    Trace.WriteLine($"{match.StartTime}-{match.EndTime} correlation {match.Correlation}");
+                    debugOutput.Log($"{match.StartTime}-{match.EndTime} correlation {match.Correlation}");
                 }
 
                 matches.AddRange(clipMatches);
@@ -224,10 +226,10 @@ namespace AudioLoadRemover
 
             var orderedMatches = matches.OrderBy(m => m.StartTime).ToList();
 
-            Trace.WriteLine("Ordered events:");
+            debugOutput.Log("Ordered events:");
             foreach (var match in orderedMatches)
             {
-                Trace.WriteLine($"{match.StartTime}-{match.EndTime} detected {match.QueryName}");
+                debugOutput.Log($"{match.StartTime}-{match.EndTime} detected {match.QueryName}");
             }
 
             // Detect load segments
@@ -281,10 +283,10 @@ namespace AudioLoadRemover
                 loadSegments.RemoveAt(0);
             }
 
-            Trace.WriteLine("Detected loads:");
+            debugOutput.Log("Detected loads:");
             foreach (var loadSegment in loadSegments)
             {
-                Trace.WriteLine($"{loadSegment.Start}-{loadSegment.End} due to {loadSegment.SequenceName}");
+                debugOutput.Log($"{loadSegment.Start}-{loadSegment.End} due to {loadSegment.SequenceName}");
             }
 
             var totalLoadTime = TimeSpan.Zero;
@@ -293,7 +295,7 @@ namespace AudioLoadRemover
                 totalLoadTime += (loadSegment.End - loadSegment.Start);
             }
 
-            Trace.WriteLine($"Total load time removed: {totalLoadTime}");
+            debugOutput.Log($"Total load time removed: {totalLoadTime}");
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
