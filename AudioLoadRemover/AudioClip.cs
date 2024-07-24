@@ -14,14 +14,12 @@ namespace AudioLoadRemover
 
             Trace.WriteLine($"Loading audio clip {this.name} from {filePath}");
 
-            var samples = new List<float>();
-            var originalSamples = new List<float>();
+            var highPassFilteredSamples = new List<float>();
+            var rawSamples = new List<float>();
 
             using var audioStream = new MemoryStream();
             using var audioMediaReader = new MediaFoundationReader(filePath);
             using var audioMediaResampler = new MediaFoundationResampler(audioMediaReader, sampleRate);
-
-            this.waveFormat = audioMediaReader.WaveFormat;
 
             var audioSampleProvider = audioMediaResampler.ToSampleProvider();
             if (audioMediaReader.WaveFormat.Channels == 2)
@@ -33,6 +31,8 @@ namespace AudioLoadRemover
                 throw new Exception("Audio clip has more than 2 channels");
             }
 
+            this.waveFormat = audioSampleProvider.WaveFormat;
+
             // The audio clip that we search for usually has high frequency sounds, whereas
             // the background sounds are often low frequency. Apply a high pass filter to
             // remove the background sounds.
@@ -43,14 +43,14 @@ namespace AudioLoadRemover
             {
                 var numSamples = audioSampleProvider.Read(sampleBuffer, 0, sampleBuffer.Length);
 
-                originalSamples.AddRange(new ReadOnlySpan<float>(sampleBuffer, 0, numSamples));
+                rawSamples.AddRange(new ReadOnlySpan<float>(sampleBuffer, 0, numSamples));
 
                 for (var i = 0; i < numSamples; ++i)
                 {
                     sampleBuffer[i] = highBandFilter.Transform(sampleBuffer[i]);
                 }
 
-                samples.AddRange(new ReadOnlySpan<float>(sampleBuffer, 0, numSamples));
+                highPassFilteredSamples.AddRange(new ReadOnlySpan<float>(sampleBuffer, 0, numSamples));
 
                 if (numSamples < sampleBuffer.Length)
                 {
@@ -58,14 +58,15 @@ namespace AudioLoadRemover
                 }
             }
 
-            this.samples = samples.ToArray();
+            this.rawSamples = rawSamples.ToArray();
+            this.highPassFilteredSamples = highPassFilteredSamples.ToArray();
 
             // Detect silences using the original samples (without the high band filter), otherwise
             // a lot of background sounds are filtered out
             this.silentPrefix = 0;
-            for (var i = 0; i < originalSamples.Count; ++i)
+            for (var i = 0; i < rawSamples.Count; ++i)
             {
-                if (Math.Abs(originalSamples[i]) > MaxSilenceLevel)
+                if (Math.Abs(rawSamples[i]) > MaxSilenceLevel)
                 {
                     break;
                 }
@@ -74,9 +75,9 @@ namespace AudioLoadRemover
             }
 
             this.silentSuffix = 0;
-            for (var i = originalSamples.Count - 1; i >= 0; --i)
+            for (var i = rawSamples.Count - 1; i >= 0; --i)
             {
-                if (Math.Abs(originalSamples[i]) > MaxSilenceLevel)
+                if (Math.Abs(rawSamples[i]) > MaxSilenceLevel)
                 {
                     break;
                 }
@@ -95,14 +96,19 @@ namespace AudioLoadRemover
             get { return this.waveFormat; }
         }
 
-        public float[] Samples
+        public float[] RawSamples
         {
-            get { return this.samples; }
+            get { return this.rawSamples; }
+        }
+
+        public float[] HighPassFilteredSamples
+        {
+            get { return this.highPassFilteredSamples; }
         }
 
         public int Duration
         {
-            get { return this.samples.Length; }
+            get { return this.highPassFilteredSamples.Length; }
         }
 
         public int SilentPrefix
@@ -120,7 +126,8 @@ namespace AudioLoadRemover
 
         private readonly string name;
         private readonly WaveFormat waveFormat;
-        private readonly float[] samples;
+        private readonly float[] rawSamples;
+        private readonly float[] highPassFilteredSamples;
         private readonly int silentPrefix;
         private readonly int silentSuffix;
     }

@@ -20,8 +20,8 @@ namespace AudioLoadRemover
         {
             Trace.WriteLine($"Searching for audio clip {query.Name} within {source.Name}");
 
-            var querySamples = query.Samples;
-            var sourceSamples = source.Samples;
+            var querySamples = query.HighPassFilteredSamples;
+            var sourceSamples = source.HighPassFilteredSamples;
 
             var numFramesToCrossCorr = source.Duration - query.Duration;
             var numChunks = (numFramesToCrossCorr + (NumFramesPerTask - 1)) / NumFramesPerTask;
