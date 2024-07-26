@@ -233,16 +233,24 @@ namespace AudioLoadRemover
             }
 
             // Detect load segments
-            var config = new List<LoadDetector.Sequence>()
+            var config = new List<LoadDetector.ISequence>()
             {
-                new LoadDetector.Sequence(
+                new LoadDetector.PairSequence(
                     "Linking",
                     "SW_RivenLink",
                     "SILENCE",
                     new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.FromSeconds(0.512)),
                     new LoadDetector.Offset(LoadDetector.Anchor.End, TimeSpan.Zero)),
 
-                new LoadDetector.Sequence(
+                // Sometimes there's no silence after the link, because the computer is so quick at
+                // loading the next scene
+                new LoadDetector.SingleSequence(
+                    "Linking",
+                    "SW_RivenLink",
+                    new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.FromSeconds(0.512)),
+                    new LoadDetector.Offset(LoadDetector.Anchor.End, TimeSpan.Zero)),
+
+                new LoadDetector.PairSequence(
                     "Dome Entry",
                     "SW_FMD_Inside_Close",
                     "SW_FMD_InnerShell_Open",
@@ -251,7 +259,7 @@ namespace AudioLoadRemover
                     // Inside door starts to open (gas hissing)
                     new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.Zero)),
 
-                new LoadDetector.Sequence(
+                new LoadDetector.PairSequence(
                     "Dome Exit",
                     "SW_FMD_InnerShell_Close",
                     "SW_FMD_Inside_Open",
@@ -260,14 +268,14 @@ namespace AudioLoadRemover
                     // Outside dome goes "clunk" as it opens fully
                     new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.FromSeconds(6.565))),
 
-                new LoadDetector.Sequence(
+                new LoadDetector.PairSequence(
                     "Maglev",
                     "SW_Maglev_TPLDeparture",
                     "SILENCE",
                     new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.Zero),
                     new LoadDetector.Offset(LoadDetector.Anchor.End, TimeSpan.Zero)),
 
-                new LoadDetector.Sequence(
+                new LoadDetector.PairSequence(
                     "Woodcart",
                     "SW_Woodcart_JNGToBLR_Start",
                     "SILENCE",
