@@ -25,7 +25,7 @@ namespace AudioLoadRemover
                 DebugWriteAudio(this.ProcessedAudio, $"{this.Name}-processed", debugOutput);
             }
 
-            this.SilentPrefix = 0;
+            var silentPrefix = 0;
             for (var i = 0; i < this.RawAudio.Samples.Length; ++i)
             {
                 if (Math.Abs(this.RawAudio.Samples[i]) > MaxSilenceLevel)
@@ -33,10 +33,10 @@ namespace AudioLoadRemover
                     break;
                 }
 
-                ++this.SilentPrefix;
+                ++silentPrefix;
             }
 
-            this.SilentSuffix = 0;
+            var silentSuffix = 0;
             for (var i = this.RawAudio.Samples.Length - 1; i >= 0; --i)
             {
                 if (Math.Abs(this.RawAudio.Samples[i]) > MaxSilenceLevel)
@@ -44,8 +44,11 @@ namespace AudioLoadRemover
                     break;
                 }
 
-                ++this.SilentSuffix;
+                ++silentSuffix;
             }
+
+            this.SilentPrefix = TimeSpan.FromSeconds((float)silentPrefix / this.RawAudio.WaveFormat.SampleRate);
+            this.SilentSuffix = TimeSpan.FromSeconds((float)silentSuffix / this.RawAudio.WaveFormat.SampleRate);
         }
 
         public string Name { get; }
@@ -54,9 +57,9 @@ namespace AudioLoadRemover
 
         public SimpleAudioClip ProcessedAudio { get; }
 
-        public int SilentPrefix { get; }
+        public TimeSpan SilentPrefix { get; }
 
-        public int SilentSuffix { get; }
+        public TimeSpan SilentSuffix { get; }
 
         private static SimpleAudioClip ReadMonoAudioFromFile(string filePath)
         {
@@ -127,7 +130,7 @@ namespace AudioLoadRemover
         }
 
         private const int SampleBufferLength = 1024 * 1024;
-        private const float MaxSilenceLevel = 0.001f;
+        private const float MaxSilenceLevel = 0.02f;
         private const float BandPassQFactor = 2.0f;
         private const int DebugAddSilenceSec = 5;
     }

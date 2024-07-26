@@ -239,7 +239,7 @@ namespace AudioLoadRemover
                     "Linking",
                     "SW_RivenLink",
                     "SILENCE",
-                    new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.Zero),
+                    new LoadDetector.Offset(LoadDetector.Anchor.Start, TimeSpan.FromSeconds(0.512)),
                     new LoadDetector.Offset(LoadDetector.Anchor.End, TimeSpan.Zero)),
 
                 new LoadDetector.Sequence(

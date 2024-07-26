@@ -41,8 +41,8 @@ namespace AudioLoadRemover
                             {
                                 var corr = 0.0f;
 
-                                var startIndex = query.SilentPrefix * numChannels;
-                                var endIndex = querySamples.Length - (query.SilentSuffix * numChannels) - Vector<float>.Count; // Don't go off the end of querySamples
+                                var startIndex = (int)(query.SilentPrefix.TotalSeconds * sampleRate) * numChannels;
+                                var endIndex = querySamples.Length - (int)(query.SilentSuffix.TotalSeconds * sampleRate * numChannels) - Vector<float>.Count; // Don't go off the end of querySamples
                                 var step = Vector<float>.Count;
 
                                 for (var j = startIndex; j < endIndex; j += step)
