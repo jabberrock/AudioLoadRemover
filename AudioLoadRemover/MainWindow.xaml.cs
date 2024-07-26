@@ -190,11 +190,11 @@ namespace AudioLoadRemover
         {
             using var debugOutput = new DebugOutput(videoPath);
 
-            var sampleRate = 3000;
+            var sampleRate = 6000;
 
             var matches = new List<AudioClipDetector.Match>();
 
-            var video = new AudioClip(videoPath, sampleRate, debugOutput);
+            var video = new AudioClip(videoPath, sampleRate, debugOutput, false);
 
             // Detect silences
             // TODO: Calculate median loudness of video and normalize it
@@ -211,7 +211,7 @@ namespace AudioLoadRemover
             // Detect clips
             foreach (var audioPath in Directory.GetFiles(@"Riven\Clips", "*.wav"))
             {
-                var audioClip = new AudioClip(audioPath, sampleRate, debugOutput);
+                var audioClip = new AudioClip(audioPath, sampleRate, debugOutput, true);
 
                 var clipMatches = AudioClipDetector.Detect(audioClip, video, sampleRate, 1, debugOutput);
 
@@ -290,12 +290,12 @@ namespace AudioLoadRemover
 
                 debugOutput.Log($"{loadSegment.Start}-{loadSegment.End} due to {loadSegment.SequenceName}");
 
-                using (var waveFileWriter = new WaveFileWriter(Path.Combine(debugOutput.Folder, $"load-{i}-{loadSegment.SequenceName}.wav"), video.WaveFormat))
+                using (var waveFileWriter = new WaveFileWriter(Path.Combine(debugOutput.Folder, $"load-{i}-{loadSegment.SequenceName}.wav"), video.ProcessedAudio.WaveFormat))
                 {
                     var startSampleIndex = Math.Max(0, (int)(loadSegment.Start.TotalSeconds * sampleRate) - (NumSecPrefixAndSuffix * sampleRate));
-                    var endSampleIndex = Math.Min((int)(loadSegment.End.TotalSeconds * sampleRate) + (NumSecPrefixAndSuffix * sampleRate), video.Duration);
+                    var endSampleIndex = Math.Min((int)(loadSegment.End.TotalSeconds * sampleRate) + (NumSecPrefixAndSuffix * sampleRate), video.ProcessedAudio.Samples.Length);
 
-                    var matchSamples = new ReadOnlySpan<float>(video.HighPassFilteredSamples, startSampleIndex, endSampleIndex - startSampleIndex).ToArray();
+                    var matchSamples = new ReadOnlySpan<float>(video.ProcessedAudio.Samples, startSampleIndex, endSampleIndex - startSampleIndex).ToArray();
                     waveFileWriter.WriteSamples(matchSamples, 0, matchSamples.Length);
                 }
             }

@@ -21,10 +21,10 @@ namespace AudioLoadRemover
         {
             debugOutput.Log($"Searching for audio clip {query.Name} within {source.Name}");
 
-            var querySamples = query.HighPassFilteredSamples;
-            var sourceSamples = source.HighPassFilteredSamples;
+            var querySamples = query.ProcessedAudio.Samples;
+            var sourceSamples = source.ProcessedAudio.Samples;
 
-            var numFramesToCrossCorr = source.Duration - query.Duration;
+            var numFramesToCrossCorr = sourceSamples.Length - querySamples.Length;
             var numChunks = (numFramesToCrossCorr + (NumFramesPerTask - 1)) / NumFramesPerTask;
 
             var crossCorrChunks =
@@ -50,6 +50,7 @@ namespace AudioLoadRemover
                                     var v1 = new Vector<float>(querySamples, j);
                                     var v2 = new Vector<float>(sourceSamples, i * numChannels + j);
                                     corr += Vector.Sum(v1 * v2);
+                                    //corr += Vector.Sum(v1 * v2) > 0 ? 1 : -1;
                                 }
 
                                 crossCorrs[i - frameIndex] = corr;
@@ -78,14 +79,14 @@ namespace AudioLoadRemover
                         query.Name,
                         source.Name,
                         TimeSpan.FromSeconds((float)maxEntry.Index / sampleRate), 
-                        TimeSpan.FromSeconds((float)(maxEntry.Index + query.Duration) / sampleRate), 
+                        TimeSpan.FromSeconds((float)(maxEntry.Index + querySamples.Length) / sampleRate), 
                         sampleRate,
                         maxEntry.Value));
 
-                using (var waveFileWriter = new WaveFileWriter(Path.Combine(debugOutput.Folder, $"match-{query.Name}-{matches.Count}.wav"), source.WaveFormat))
+                using (var waveFileWriter = new WaveFileWriter(Path.Combine(debugOutput.Folder, $"match-{query.Name}-{matches.Count}.wav"), source.ProcessedAudio.WaveFormat))
                 {
                     var startSampleIndex = Math.Max(0, maxEntry.Index - (NumSecPrefixAndSuffix * sampleRate));
-                    var endSampleIndex = Math.Min(maxEntry.Index + query.Duration + (NumSecPrefixAndSuffix * sampleRate), source.Duration);
+                    var endSampleIndex = Math.Min(maxEntry.Index + querySamples.Length + (NumSecPrefixAndSuffix * sampleRate), sourceSamples.Length);
 
                     var matchSamples = new ReadOnlySpan<float>(sourceSamples, startSampleIndex, endSampleIndex - startSampleIndex).ToArray();
                     waveFileWriter.WriteSamples(matchSamples, 0, matchSamples.Length);
@@ -96,6 +97,6 @@ namespace AudioLoadRemover
         }
 
         private const int NumSecPrefixAndSuffix = 5;
-        private const float SuppressMaxThreshold = 0.8f;
+        private const float SuppressMaxThreshold = 0.7f;
     }
 }

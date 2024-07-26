@@ -6,10 +6,9 @@
         {
             var silences = new List<AudioClipDetector.Match>();
 
-
-            var samples = clip.RawSamples;
-            var numChannels = clip.WaveFormat.Channels;
-            var sampleRate = clip.WaveFormat.SampleRate;
+            var samples = clip.RawAudio.Samples;
+            var numChannels = clip.RawAudio.WaveFormat.Channels;
+            var sampleRate = clip.RawAudio.WaveFormat.SampleRate;
 
             TimeSpan? startTime = null;
             for (var i = 0; i < samples.Length / numChannels; ++i)
